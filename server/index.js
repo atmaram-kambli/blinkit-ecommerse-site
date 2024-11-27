@@ -6,8 +6,8 @@ import helmet from 'helmet'
 import dotenv from 'dotenv';
 dotenv.config();
 
-// mongodb connection
 import connectToMongoDB from './config/connectDB.js';
+import userRouter from './routes/user.route.js';
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use(cookieParser())
-app.use(morgan())
+app.use(morgan('combined'))
 app.use(helmet({
     crossOriginResourcePolicy : false
 }))
@@ -27,7 +27,10 @@ const PORT = 8080 || process.env.PORT;
 
 app.get('/', (req, res) => {
     res.send("Hi There 2!");
+
 })
+
+app.use('api/user/', userRouter)
 
 
 connectToMongoDB().then( () => {
