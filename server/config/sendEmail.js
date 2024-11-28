@@ -8,7 +8,7 @@ if(!process.env.RESEND_API) {
 
 const resend = new Resend(process.env.RESEND_API);
 
-export default async function (sendTo, subject, html) {
+export default async function ({sendTo, subject, html}) {
     try {            
         const { data, error } = await resend.emails.send({
             from: 'BlinkIt <onboarding@resend.dev>',

@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { regiterUserController } from '../controllers/user.controller.js';
+import { regiterUserController, verifyEmailController } from '../controllers/user.controller.js';
 
 const router = Router();
 
-router.post('register', regiterUserController);
+router.post('/register', regiterUserController);
+router.post('/verify-email', verifyEmailController);
 
 export default router;
