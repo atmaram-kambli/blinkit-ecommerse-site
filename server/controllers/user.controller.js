@@ -6,8 +6,8 @@ import verifyEmailTemplate from '../utils/verifyEmailTemplate.js';
 import generatedAccessToken from '../utils/generateAccessToken.js';
 import genertedRefreshToken from '../utils/generateRefreshToken.js';
 import uploadImageCloudinary from '../utils/uploadImageCloudinary.js';
-
-
+import forgotPasswordTemplate from '../utils/forgotPasswordTemplate.js'
+import generateOTP from '../utils/generateOTP.js';
 
 // 1. New User Registeration
 export async function regiterUserController(req, res) {
@@ -267,6 +267,171 @@ export async function updateUserDetails(req,res){
             data : updateUser
         })
 
+
+    } catch (error) {
+        return res.status(500).json({
+            message : error.message || error,
+            error : true,
+            success : false
+        })
+    }
+}
+
+
+// 7. Forgot password controller 
+export async function forgotPasswordController(req,res) {
+    try {
+        const { email } = req.body 
+
+        const user = await UserModel.findOne({ email })
+
+        if(!user){
+            return res.status(400).json({
+                message : "Provide valid credentials!",
+                error : true,
+                success : false
+            })
+        }
+
+        const otp = generateOTP()
+        const expireTime = new Date() + 60 * 60 * 1000 // 1hr
+
+        const update = await UserModel.findByIdAndUpdate(user._id,{
+            forgot_password_otp : otp,
+            forgot_password_expiry : new Date(expireTime).toISOString()
+        })
+
+        await sendEmail({
+            sendTo : email,
+            subject : "Forgot password from BlinkIt",
+            html : forgotPasswordTemplate({
+                name : user.name,
+                otp : otp
+            })
+        })
+
+        return res.json({
+            message : "Check your email for OTP!",
+            error : false,
+            success : true
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message : error.message || error,
+            error : true,
+            success : false
+        })
+    }
+}
+
+// 8. Verify OTP controller 
+export async function verifyForgotPasswordOTP(req,res){
+    try {
+        const { email , otp }  = req.body
+
+        if(!email || !otp){
+            return res.status(400).json({
+                message : "Error! Provide valid credentials",
+                error : true,
+                success : false
+            })
+        }
+
+        const user = await UserModel.findOne({ email })
+
+        if(!user){
+            return res.status(400).json({
+                message : "User with given Email is not registered Try SignUp.",
+                error : true,
+                success : false
+            })
+        }
+
+        const currentTime = new Date().toISOString()
+
+        if(user.forgot_password_expiry < currentTime) {
+            return res.status(400).json({
+                message : "OTP is expired!",
+                error : true,
+                success : false
+            })
+        }
+
+        if(otp !== user.forgot_password_otp) {
+            return res.status(400).json({
+                message : "Invalid OTP!",
+                error : true,
+                success : false
+            })
+        }
+
+        //if otp is not expired
+        //otp === user.forgot_password_otp
+
+        const updateUser = await UserModel.findByIdAndUpdate(user?._id,{
+            forgot_password_otp : "",
+            forgot_password_expiry : ""
+        })
+        
+        return res.json({
+            message : "OTP is verified successfully!",
+            error : false,
+            success : true
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message : error.message || error,
+            error : true,
+            success : false
+        })
+    }
+}
+
+// 9. Reset password controller
+export async function resetpasswordController(req,res){
+    try {
+        const { email , newPassword, confirmPassword } = req.body 
+
+        if(!email || !newPassword || !confirmPassword){
+            return res.status(400).json({
+                message : "Provide valid credentials!",
+                error : true,
+                success : false
+            })
+        }
+
+        const user = await UserModel.findOne({ email })
+
+        if(!user){
+            return res.status(400).json({
+                message : "Wrong Email address.",
+                error : true,
+                success : false
+            })
+        }
+
+        if(newPassword !== confirmPassword){
+            return res.status(400).json({
+                message : "New Password and Confirm Password must be same.",
+                error : true,
+                success : false,
+            })
+        }
+
+        const salt = await bcryptjs.genSalt(10)
+        const hashPassword = await bcryptjs.hash(newPassword,salt)
+
+        const update = await UserModel.findOneAndUpdate(user._id,{
+            password : hashPassword
+        })
+
+        return res.json({
+            message : "Password is updated successfully!",
+            error : false,
+            success : true
+        })
 
     } catch (error) {
         return res.status(500).json({
