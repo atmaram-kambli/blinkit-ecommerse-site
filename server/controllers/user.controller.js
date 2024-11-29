@@ -209,7 +209,7 @@ export async function logoutController(req,res){
 }
 
 
-// 5. Upload User Avatar controller
+// 5. Upload/update User Avatar controller
 export async function uploadUserAvatar(req, res) {
     try {
         const image = req.file;
@@ -234,6 +234,43 @@ export async function uploadUserAvatar(req, res) {
     } catch (error) {
         return res.status(500).json({
             message : "error.message || error",
+            error : true,
+            success : false
+        })
+    }
+}
+
+// 6. Update User Details
+export async function updateUserDetails(req,res){
+    try {
+        const userId = req.userId;
+        const { name, email, mobile, password } = req.body;
+
+        let hashPassword = "";
+
+        if(password){
+            const salt = await bcryptjs.genSalt(10);
+            hashPassword = await bcryptjs.hash(password,salt);
+        }
+
+        const updateUser = await UserModel.updateOne({ _id : userId},{
+            ...(name && { name : name }),
+            ...(email && { email : email }),
+            ...(mobile && { mobile : mobile }),
+            ...(password && { password : hashPassword })
+        })
+
+        return res.json({
+            message : "User details are updated successfully",
+            error : false,
+            success : true,
+            data : updateUser
+        })
+
+
+    } catch (error) {
+        return res.status(500).json({
+            message : error.message || error,
             error : true,
             success : false
         })
