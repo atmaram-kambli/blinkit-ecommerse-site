@@ -5,6 +5,7 @@ import bcryptjs from 'bcryptjs'
 import verifyEmailTemplate from '../utils/verifyEmailTemplate.js';
 import generatedAccessToken from '../utils/generateAccessToken.js';
 import genertedRefreshToken from '../utils/generateRefreshToken.js';
+import uploadImageCloudinary from '../utils/uploadImageCloudinary.js';
 
 
 
@@ -201,6 +202,38 @@ export async function logoutController(req,res){
     } catch (error) {
         return res.status(500).json({
             message : error.message || error,
+            error : true,
+            success : false
+        })
+    }
+}
+
+
+// 5. Upload User Avatar controller
+export async function uploadUserAvatar(req, res) {
+    try {
+        const image = req.file;
+
+        const upload = await uploadImageCloudinary(image);
+
+        const userId = req.userId;
+        const updateUser = await UserModel.findByIdAndUpdate( userId, {
+            avatar: upload.url,
+        })
+
+        // console.log('Image', image);
+        return res.status(200).json({
+            message : "Image is uploaded successfully!",
+            error : false,
+            success : true,
+            data : {
+                _id : userId,
+                avatar: upload.url
+            },
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message : "error.message || error",
             error : true,
             success : false
         })
