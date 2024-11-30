@@ -26,7 +26,7 @@ app.use(helmet({
 const PORT = 8080 || process.env.PORT;
 
 app.get('/', (req, res) => {
-    res.send("Hi There 2!");
+    res.send("Hi There!");
 
 })
 
